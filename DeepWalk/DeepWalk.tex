@@ -85,7 +85,7 @@ introduced $\Phi: v \in V \mapsto \mathbb{R}^{\vert V \vert \times d} $.
 This mapping represents the latent social representation of each vertex $v$.
 Then the problem becomes:
 \begin{equation}
-  \Pr(v_i \mid (\Phi(v_1), \Phi(v_2), \ldots, \Phi(v_{i-1}))
+  \Pr(v_i \mid (\Phi(v_1), \Phi(v_2), \ldots, \Phi(v_{i-1})))
   \label{eq:3}
 \end{equation}
 However, as walk length grows, computing this objective function becomes
@@ -116,6 +116,34 @@ Solving the optimisation problem builds a representation that capture similariti
 in local graph structure between vertices. 
 
 \section{Method}
+Random walk generator takes a graph $G$ rooting at vertex $v_i$ for the random walk $\mathcal{W}_{v_i}$.
+In practice, each iteration is doing a "pass" over the data and sample one walk per node during each pass.
+
+SkipGram is an algorithm used in NLP that maximises the co-occurrence probability among the words that 
+appear withing a window, $w$, in a sentence.
+
+In this case, a SkipGram is used to iterate over all possible collocations in a random walk
+that appear within a window $w$. For each, each vertex $v_j$ is maped into it's current representation
+$\Phi(v_j) \in \mathbb{R}^d$. Given the representation of $v_j$ we want to maximise the probability
+of its neighbors in the walk. To speed up this training, hierarchical Softmax can be used.
+
+\section{Hierarchical Softmax}
+Given that $u_k \in V$, calculating $\Pr (u_k \mid \Phi(v_j))$ is not feasible
+(computational expensive). If the path to vertex $u_k$ is identified by a
+sequence of tree nodes $\left(b_0, b_1, \ldots, b_{\lceil \log \vert V \vert \rceil}\right)$,
+$(b_0 =$ root, $b_{\lceil log \vert V \vert \rceil} = u_k)$ then
+\begin{equation}
+  \Pr(u_k \mid \Phi(v_j)) = \prod_{l=1}^{\lceil \log \vert V \vert \rceil )}\Pr(b_l \mid \Phi(v_j)
+  \label{eq:5}
+\end{equation}
+
+Now $\Pr(b_l \mid \Phi(v_j))$ is modelled by a binary classifier that is assigned to the parent of the node $b_l$.
+
+
+
+
+
+
 
 
 
