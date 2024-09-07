@@ -43,14 +43,84 @@ self-attention mechanism.
 
 The attention architecture has several interesting properties:
 \begin{itemize}
-  \item the operation is efficient, since it is parallelizable across node-neighbor pairs
-  \item it can be applied to graph nodes having different degrees by specifying arbitrary weights
-    to the neighbors.
-  \item the model is directly applicable to inductive learning problems including tasks where the model
-    has to generalise to complete unseen graphs.
+  \item the operation is efficient, since it is parallelizable across
+    node-neighbor pairs
+  \item it can be applied to graph nodes having different degrees by specifying
+    arbitrary weights to the neighbors.
+  \item the model is directly applicable to inductive learning problems
+    including tasks where the model has to generalise to complete unseen
+    graphs.
 \end{itemize}
 
+\section{GAT Architecture}
+Single graph attention layer, is the sole layer utilised thoughout all the GAT
+architectures for this project.
+The input to this layer is a set of node features $\mathbf{h} = \{ \vec{h_1},
+\vec{h_2},\ldots ,\vec{h_N}\}, \vec{h}_i \in \mathbb{R}^F$, where $N$ is the
+number of nodes, and $F$ is the number of featues in each node. The layer
+producs a new set of node features $\mathbf{h'} = \{ \vec{h}_1',
+\vec{h}_2',\ldots ,\vec{h}_N'\}, \vec{h}_i' \in \mathbb{R}^{F'}$ as its output.
+In order to obtain sufficient expressive power to transform the input features
+into higher-level features, at leas one learnable linear transformation is
+required. A shared linear transformation, parameterised by a \textit{weight
+matrix}, $\mathbf{W} \in \mathbb{R}^{F \times F'}$, is applied to every node.
+Then a \textit{self-attention} on the nodes is performed $a : \mathbb{R}^{F'}
+\times \mathbb{R}^{F'} \to \mathbb{R}$ computes attention coefficients
+
+\begin{equation}
+  e_{ij} = a\left( \mathbf{W}\vec{h}_i , \mathbf{W}\vec{h}_j\right)
+  \label{eq:1}
+\end{equation}
+
+Indicating the importance of node $j$'s features to node $i$. The graph
+structure is injected into the mechanism by performing masked attention
+$e_{ij}$ is only computed for nodes $j \in \mathcal{N}_i$ where $\mathcal{N}_i$
+is the first-order neighborhood of node $i$ including iteself, in the graph. To
+make coefficients easily comparable across different nodes, they are normalised
+using softmax function:
+
+\begin{equation}
+  \alpha_{ij} = \text{softmax}_j(e_{ij}) =
+  \frac{
+    \exp\left(\text{LeakyReLU}\left( \vec{a}^T [\mathbf{W}\vec{h}_i
+    \Vert\mathbf{W}\vec{h}_j] \right) \right)
+  } 
+  {
+    \sum_{k \in \mathcal{N}_i} \exp\left(\text{LeakyReLU}\left( \vec{a}^T
+    [\mathbf{W}\vec{h}_i \Vert\mathbf{W}\vec{h}_j] \right) \right)
+  }
+  \label{eq:2}
+\end{equation}
+
+The attention mechanism $a$ is a single-layer feedforward neural network,
+parametrised by a weight vecto $\vec{a} \in \mathbb{R}^{2F'}$ and applying
+LeakyReLU nonlinearity.
+The normalised attention coefficients are then used to compute a linear combination of the features
+corresponding to them, to serve as the final output features for every node:
+\begin{equation}
+  \vec{h}'_i = \sigma\left( \sum_{j \in \mathcal{N}_i} \alpha_{ij} \mathbf{W}\vec{h}_j \right)
+  \label{eq:3}
+\end{equation}
+
+Multi-head attention has been found to be beneficial for the stability of the
+learning process concatenating $K$  attention mechanisms transformations:
+
+\begin{equation}
+  \vec{h}'_i =  \underset{k=1}{\overset{K}{\Big\|}} \sigma\left( \sum_{j \in
+  \mathcal{N}_i} \alpha_{ij} \mathbf{W}\vec{h}_j \right)
+  \label{eq:4}
+\end{equation}
+
+Where $\Vert$ represents concatenation, $\alpha_{ij}^{k}$ are the normalised attention coefficients computed
+by the $k$-th attention mechanism ($a^k$) and $\mathbf{W}^k$ is the corresponding input linear transoformation's 
+weight matrix.
+If multi-head attention on the final (prediction) layer of the network is performed, concatenation is no longer
+sensible, instead, apply averaging and delaying final nonlinearity:
+\begin{equation}
+  \vec{h}'_i =  \sigma\left(\frac{1}{K} \sum_{k=1}^{K} \sum_{j \in
+  \mathcal{N}_i} \alpha_{ij} \mathbf{W}\vec{h}_j \right)
+  \label{eq:5}
+\end{equation}
 
 \end{document}
-
 
